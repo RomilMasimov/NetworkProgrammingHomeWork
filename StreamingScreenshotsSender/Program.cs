@@ -18,6 +18,11 @@ namespace StreamingScreenshotsSender
     {
         static void Main(string[] args)
         {
+            MainAsync(args).GetAwaiter().GetResult();
+        }
+
+        static async Task MainAsync(string[] args)
+        {
             var tcpServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var serverIpPoint = new IPEndPoint(IPAddress.Any, 27001);
 
@@ -35,7 +40,7 @@ namespace StreamingScreenshotsSender
                 if (command == "start")
                 {
                     Console.WriteLine(client.RemoteEndPoint.ToString());
-                    SendScreenshots(client.RemoteEndPoint);
+                    await SendScreenshotsAsync(client.RemoteEndPoint);
                     client.Shutdown(SocketShutdown.Both);
                     client.Close();
                     break;
@@ -43,35 +48,51 @@ namespace StreamingScreenshotsSender
             }
         }
 
-        static void SendScreenshots(EndPoint ipPoint)
+        static async Task SendScreenshotsAsync(EndPoint ipPoint)
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-            while (true)
+            await Task.Run(() =>
             {
-                byte[] data;
-                //using (var screenshot = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height))
-                using (var screenshot = new Bitmap(640, 360))
+                while (true)
                 {
-                    using (var graphics = Graphics.FromImage(screenshot))
+                    List<byte> imageData;
+                    //using (var screenshot = new Bitmap(640, 360))
+                    using (var screenshot = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height))
                     {
-                        graphics.CopyFromScreen(0, 0, 0, 0, screenshot.Size);
-                    }
-
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                        using (var graphics = Graphics.FromImage(screenshot))
                         {
-                            screenshot.Save(gZipStream, ImageFormat.Png);
-                            data = memoryStream.ToArray();
+                            graphics.CopyFromScreen(0, 0, 0, 0, screenshot.Size);
                         }
-                    }                }
 
-                var numData = BitConverter.GetBytes(data.Length);
-                socket.SendTo(numData, ipPoint);
-                socket.SendTo(data, ipPoint);
-                Thread.Sleep(300);
-            }
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            //using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                            //{
+                            //screenshot.Save(gZipStream, ImageFormat.Png);
+                            screenshot.Save(memoryStream, ImageFormat.Png);
+                            imageData = memoryStream.ToArray().ToList();
+                            //}
+                        }
+                    }
+                    var parts = imageData.Count() / 65000 + (imageData.Count() % 65000 > 0 ? 1 : 0);
+                    var partsData = BitConverter.GetBytes(parts);
+                    socket.SendTo(partsData, ipPoint);
+
+                    for (int i = 0; i < parts; i++)
+                    {
+                        var currentIndex = i * 65000;
+                        int currentCount;
+                        if (i + 1 == parts) currentCount = imageData.Count - currentIndex;
+                        else currentCount = 65000;
+                        
+                        var numData = BitConverter.GetBytes(currentCount);
+                        socket.SendTo(numData, ipPoint);
+                        Thread.Sleep(1);
+                        socket.SendTo(imageData.GetRange(currentIndex, currentCount).ToArray(), ipPoint);
+                    }
+                }
+            });
         }
     }
 }
