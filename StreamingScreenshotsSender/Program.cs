@@ -18,11 +18,6 @@ namespace StreamingScreenshotsSender
     {
         static void Main(string[] args)
         {
-            MainAsync(args).GetAwaiter().GetResult();
-        }
-
-        static async Task MainAsync(string[] args)
-        {
             var tcpServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var serverIpPoint = new IPEndPoint(IPAddress.Any, 27001);
 
@@ -40,10 +35,9 @@ namespace StreamingScreenshotsSender
                 if (command == "start")
                 {
                     Console.WriteLine(client.RemoteEndPoint.ToString());
-                    await SendScreenshotsAsync(client.RemoteEndPoint);
+                    SendScreenshotsAsync(client.RemoteEndPoint);
                     client.Shutdown(SocketShutdown.Both);
                     client.Close();
-                    break;
                 }
             }
         }
@@ -57,7 +51,6 @@ namespace StreamingScreenshotsSender
                 while (true)
                 {
                     List<byte> imageData;
-                    //using (var screenshot = new Bitmap(640, 360))
                     using (var screenshot = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height))
                     {
                         using (var graphics = Graphics.FromImage(screenshot))
@@ -67,14 +60,11 @@ namespace StreamingScreenshotsSender
 
                         using (var memoryStream = new MemoryStream())
                         {
-                            //using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
-                            //{
-                            //screenshot.Save(gZipStream, ImageFormat.Png);
                             screenshot.Save(memoryStream, ImageFormat.Png);
                             imageData = memoryStream.ToArray().ToList();
-                            //}
                         }
                     }
+                    Console.WriteLine(imageData.Count());
                     var parts = imageData.Count() / 65000 + (imageData.Count() % 65000 > 0 ? 1 : 0);
                     var partsData = BitConverter.GetBytes(parts);
                     socket.SendTo(partsData, ipPoint);
@@ -88,11 +78,12 @@ namespace StreamingScreenshotsSender
                         
                         var numData = BitConverter.GetBytes(currentCount);
                         socket.SendTo(numData, ipPoint);
-                        Thread.Sleep(1);
+                        Thread.Sleep(40);
                         socket.SendTo(imageData.GetRange(currentIndex, currentCount).ToArray(), ipPoint);
                     }
                 }
             });
+            socket.Shutdown(SocketShutdown.Both);
         }
     }
 }

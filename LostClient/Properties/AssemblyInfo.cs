@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("StreamingScreenshotsLibrary")]
+[assembly: AssemblyTitle("LostClient")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("StreamingScreenshotsLibrary")]
+[assembly: AssemblyProduct("LostClient")]
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("35737151-5423-4045-bfb0-64bf0de27245")]
+[assembly: Guid("3591426c-ec72-4c72-9199-cf770daf7985")]
 
 // Version information for an assembly consists of the following four values:
 //

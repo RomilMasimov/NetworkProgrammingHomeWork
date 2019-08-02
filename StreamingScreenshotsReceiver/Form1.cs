@@ -22,13 +22,12 @@ namespace StreamingScreenshotsReceiver
             InitializeComponent();
         }
 
-        private async void StartButton_Click(object sender, EventArgs e)
+        private void StartButton_Click(object sender, EventArgs e)
         {
             var inputIpAddress = this.ipAddressTextBox.Text;
-            var result = IPAddress.TryParse("127.0.0.1", out var ipAddress);
-            if (result)
+            if (IPAddress.TryParse(inputIpAddress, out var ipAddress))
             {
-                await ListenAsync(ipAddress);
+                ListenAsync(ipAddress);
                 return;
             }
             MessageBox.Show("Enter a valid address.");
@@ -65,25 +64,15 @@ namespace StreamingScreenshotsReceiver
 
                         byte[] partsData = new byte[count];
                         udpReceiver.ReceiveFrom(partsData, ref localIpPoint);
-                        using (var memoryStream = new MemoryStream(partsData))
-                        {
-                            //using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
-                            //{
-                            //image = Image.FromStream(gZipStream);
-                            imageData.AddRange(memoryStream.ToArray());
-
-                            //image.Save("test.png");
-                            //}
-                        }
+                        imageData.AddRange(partsData);
                     }
                     using (var memoryStream = new MemoryStream(imageData.ToArray()))
                     {
                         image = Image.FromStream(memoryStream);
                     }
-                        this.pictureBox1.Image = image;
+                    this.pictureBox1.Image = image;
                 }
             });
-
         }
     }
 }
